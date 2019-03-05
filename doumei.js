@@ -5,6 +5,8 @@ const qrcode = require('qrcode-terminal')
 const fs = require('fs')
 const request = require('request')
 
+
+
 let bot
 /**
  * 尝试获取本地登录数据，免扫码
@@ -75,18 +77,52 @@ bot.on('error', err => {
  */
 bot.on('message', msg => {
 	console.log(msg)
+  console.log(bot.user);
 })
 
-var shuchong='@95ad044a752f652d6aacdded0254c458468e71ce05c54dd9738ff9c483cc023b';
-var tianguang = '@95ad044a752f652d6aacdded0254c458468e71ce05c54dd9738ff9c483cc023b';
+var adminpwd='ff9c483cc023b';
 var config = {};
+var adminUUID = '';
+var forwardGroup = new Set();
+var forwardFrom = '';
+var forwardTo = '';
+
+forwardFrom = bot.user.UserName;
+
 bot.on('message', msg => {
 	//识别命令
-	if(msg.FromUserName==tianguang || msg.Content.startsWith(tianguang)){
-		if(msg.Content.endsWith('自动转发')){
-			if(msg.FromUserName!=)
-		}else if(msg.Content.endsWith('此群直播')){
-
-		}
+  if(msg.FromUserName == adminUUID || msg.Content.startsWith(adminUUID) || msg.FromUserName == bot.user.UserName){//是管理员
+    if(msg.Content.endsWith('设置转播')){
+      forwardGroup.add(msg.FromUserName);
+      bot.sendMsg('已成功设置在此转播', msg.ToUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }else if(msg.Content.endsWith('设置主播')){
+      forwardGroup.delete(msg.FromUserName);
+      forwardGroup.delete(msg.ToUserName);
+      forwardTo=msg.ToUserName;
+      bot.sendMsg('已成功设置在此主播', msg.ToUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }
+  }else if(msg.ToUserName=bot.user.UserName && msg.Content.endsWith('我是管理员'+adminpwd)){
+		adminUUID=msg.FromUserName;
+		bot.sendMsg('您的账户成功获得管理员权限', msg.FromUserName)
+    .catch(err => {
+      bot.emit('error', err)
+    })
 	}
+  ////些为转发消息
+  if(msg.FromUserName == forwardFrom && forwardTo == msg.ToUserName){
+    console.log("准备转播");
+    console.log(forwardGroup)
+    for (let i of forwardGroup) {
+      bot.forwardMsg(msg, i)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }
+  }
 })
