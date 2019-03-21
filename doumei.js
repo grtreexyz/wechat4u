@@ -75,39 +75,83 @@ bot.on('error', err => {
 /**
  * 如何处理会话消息
  */
-bot.on('message', msg => {
-	console.log(msg)
-  console.log(bot.user);
-})
+// bot.on('message', msg => {
+// 	// console.log(msg)
+//  //  console.log(bot.user);
+//  //  console.log(forwardFrom,forwardTo,forwardGroup);
+// })
 
 var adminpwd='ff9c483cc023b';
-var config = {};
-var adminUUID = '';
+//var config = {};
+var adminUUID = null;
 var forwardGroup = new Set();
-var forwardFrom = '';
-var forwardTo = '';
+var forwardFrom = null;
+var forwardTo = null;
 
 forwardFrom = bot.user.UserName;
 
+
+//在群中，别人发的消息FromUserName为群，toUserName是自己
+//在群中，自已发的消息，from自己，to群
+
+
 bot.on('message', msg => {
-	//识别命令
-  if(msg.FromUserName == adminUUID || msg.Content.startsWith(adminUUID) || msg.FromUserName == bot.user.UserName){//是管理员
+  if(msg.FromUserName == bot.user.UserName){//自己发的消息
     if(msg.Content.endsWith('设置转播')){
-      forwardGroup.add(msg.FromUserName);
+      forwardGroup.add(msg.ToUserName);
       bot.sendMsg('已成功设置在此转播', msg.ToUserName)
       .catch(err => {
         bot.emit('error', err)
       })
     }else if(msg.Content.endsWith('设置主播')){
-      forwardGroup.delete(msg.FromUserName);
       forwardGroup.delete(msg.ToUserName);
       forwardTo=msg.ToUserName;
       bot.sendMsg('已成功设置在此主播', msg.ToUserName)
       .catch(err => {
         bot.emit('error', err)
       })
+    }else if(msg.Content.endsWith('取消主播')){
+      forwardTo=null;
+      bot.sendMsg('已成功取消在此主播', msg.ToUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }else if(msg.Content.endsWith('取消转播')){
+      forwardGroup.delete(msg.ToUserName);
+      bot.sendMsg('已成功取消在此转播', msg.ToUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
     }
-  }else if(msg.ToUserName=bot.user.UserName && msg.Content.endsWith('我是管理员'+adminpwd)){
+  }else if(msg.FromUserName == adminUUID || msg.Content.startsWith(adminUUID)){//是管理员
+    if(msg.Content.endsWith('设置转播')){
+      forwardGroup.add(msg.FromUserName);
+      bot.sendMsg('已成功设置在此转播', msg.FromUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }else if(msg.Content.endsWith('设置主播')){
+      forwardGroup.delete(msg.FromUserName);
+      forwardTo=msg.FromUserName;
+      bot.sendMsg('已成功设置在此主播', msg.FromUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }else if(msg.Content.endsWith('取消转播')){
+      forwardGroup.delete(msg.FromUserName);
+      bot.sendMsg('已成功取消在此转播', msg.FromUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }else if(msg.Content.endsWith('取消主播')){
+      forwardTo=null;
+      bot.sendMsg('已成功取消在此主播', msg.FromUserName)
+      .catch(err => {
+        bot.emit('error', err)
+      })
+    }
+  }else if(msg.ToUserName==bot.user.UserName && msg.Content.endsWith('我是管理员'+adminpwd)){
+    console.log("设置管理员");
 		adminUUID=msg.FromUserName;
 		bot.sendMsg('您的账户成功获得管理员权限', msg.FromUserName)
     .catch(err => {
@@ -116,13 +160,16 @@ bot.on('message', msg => {
 	}
   ////些为转发消息
   if(msg.FromUserName == forwardFrom && forwardTo == msg.ToUserName){
-    console.log("准备转播");
+    console.log("转播");
     console.log(forwardGroup)
+    let i=0;
     for (let i of forwardGroup) {
-      bot.forwardMsg(msg, i)
-      .catch(err => {
-        bot.emit('error', err)
-      })
+      setTimeout(function(){
+        bot.forwardMsg(msg, i).catch(err => {
+          bot.emit('error', err)
+        });
+      },500*i);
+      i++;
     }
   }
 })
